@@ -7,9 +7,15 @@ from pybricks.ev3devices import Motor
 from pybricks.iodevices import AnalogSensor
 from pybricks.parameters import Port
 from pybricks.parameters import Button
+from pybricks.parameters import Color
+from pybricks.media.ev3dev import Font
 import pybricks.tools
 
 ################################################################
+
+def ev_print(msg):
+    print(msg)
+    ev3.screen.print(msg)
 
 class Clock:
     # Constants
@@ -38,6 +44,9 @@ class Clock:
         self.current_hour = hour
         self.current_min = min
         
+    def normalize_time(self):
+        self.current_hour = self.current_hour % 24
+                
     def run_until_pressed(self, should_advance):
         self.motor.reset_angle(0)
         
@@ -49,6 +58,8 @@ class Clock:
                 if should_advance():
                     done = True
                     break
+                
+            ev_print("*** 1 min")
                 
             if not done:
                 self.motor.run_angle(Clock.MOTOR_SPEED, 1 * Clock.TIME_TURN)
@@ -67,71 +78,89 @@ class Clock:
 
 # Main section and global variables
 
-INIT_HOUR = 14
-INIT_MIN = 45
+HOURS = [ (16, 15), (19, 0), (24 + 4, 0), (24 + 6, 30)]
+V_THRESHOLD = 2500
 
-# Initialize the EV3 Brick.
-ev3 = EV3Brick()
-motor = Motor(Port.A)
-clock = Clock(motor, INIT_HOUR, INIT_MIN)
-esp32 = AnalogSensor(Port.S1)
+ev3 = None
+motor = None
+esp32 = None
+clock = None
 
 ################################################################
 
+def init_brick():
+    # Initialize the EV3 Brick.
+    global ev3
+    global motor
+    global esp32
+    global clock
+    
+    ev3 = EV3Brick()
+    
+    ev3.screen.set_font(Font(size=12))
+    
+    while True:            
+        try:
+            motor = Motor(Port.A)
+            esp32 = AnalogSensor(Port.S1)
+            break
+        except:
+            ev_print("Something is wrong")
+            ev_print("Disconnect sensor/motor")
+            pybricks.tools.wait(5000)
+            ev3.screen.clear()
+                
+    clock = Clock(motor, HOURS[0][0], HOURS[0][1])
+
+
 def calibrate():
-    print("Ready to calibrate")
-    print("LEFT / RIGHT Buttons for adjusting the clock to 02:45")
-    print("UP when you have finished the calibration")
+    ev3.light.on(Color.RED)
+    ev3.screen.clear()
+    ev_print("Ready to calibrate")    
+    ev_print("LEFT / RIGHT Buttons to adjust")
+    ev_print("Set clock to %02d:%2d" % (HOURS[0][0] % 24, HOURS[0][1]))
+    ev_print("Press UP when done")
     
     while True:
         pressed = ev3.buttons.pressed()
         if Button.RIGHT in pressed:
-            motor.run_angle(180, 1)
-            print("Motor at %d" % motor.angle())
+            motor.run_angle(300, 5)
         elif Button.LEFT in pressed:
-            motor.run_angle(180, -1)
-            print("Motor at %d" % motor.angle())
-        elif Button.UP in pressed:
+            motor.run_angle(300, -5)
+        elif (Button.UP in pressed) or (esp32.voltage() > V_THRESHOLD):
             motor.reset_angle(0)
             break
 
-    print("Calibration done")
-    print("Assuming clock is set at 02:45")
-    clock.go_to_time(14, 45)
+    clock.set_time(HOURS[0][0], HOURS[0][1])
+    ev_print("Calibration done")
+    ev_print("Assuming it's %02d:%02d" % (HOURS[0][0] % 24, HOURS[0][1]))
+    pybricks.tools.wait(5000)
+    ev3.screen.clear()
+    ev_print("LIVE -- REAL TIME!")
 
 def check_pressed():
-    V_THRESHOLD = 2.0
-    
-    if (esp32.voltage() < V_THRESHOLD) or (Button.DOWN in ev3.buttons.pressed()):
+    if (esp32.voltage() > V_THRESHOLD) or (Button.DOWN in ev3.buttons.pressed()):
         return True
     else:
         return False
     
-def main():
-    clock.go_to_time(14, 45)
-    print("Set at 14:45")
-    clock.run_until_pressed(check_pressed)
-    
-    clock.go_to_time(17, 27)
-    print("Set at 17:27")    
-    clock.run_until_pressed(check_pressed)
-    
-    clock.go_to_time(24 + 2, 26)
-    print("Set at 2:26")    
-    clock.run_until_pressed(check_pressed)
+def main():    
+    ev3.light.on(Color.GREEN)
+    for (hour, min) in HOURS:
+        clock.go_to_time(hour, min)
+        ev_print("Time is %02d:%02d" % (hour % 24, min))
+        clock.run_until_pressed(check_pressed)
         
-    clock.go_to_time(24 + 3, 58)
-    print("Set at 3:58")    
-    clock.run_until_pressed(check_pressed)
-    
-    print("=========")    
-    print("Play Done")
-    print("Resetting to 2:45")
-    clock.go_to_time(24 + 12 + 2, 45)
-    
-    print("Finished")
+    ev_print("=========")    
+    ev_print("Play Done")
+    ev_print("Resetting to the beginning")
+    clock.normalize_time()
+    clock.go_to_time(HOURS[0][0], HOURS[0][1])
+    ev3.screen.clear()
 
-if __name__ == "__main__":
-    calibrate()
-    main()    
+if __name__ == "__main__":    
+    init_brick()    
+    while True:        
+        calibrate()        
+        main()    
 
