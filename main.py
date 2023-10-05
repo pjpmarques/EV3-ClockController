@@ -4,7 +4,6 @@
 
 from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import Motor
-from pybricks.iodevices import AnalogSensor
 from pybricks.ev3devices import TouchSensor
 from pybricks.parameters import Port
 from pybricks.parameters import Button
@@ -96,7 +95,6 @@ def init_brick():
     global clock
     
     ev3 = EV3Brick()
-    
     ev3.screen.set_font(Font(size=12))
     
     while True:            
@@ -104,7 +102,6 @@ def init_brick():
             motor = Motor(Port.D)
             touch = TouchSensor(Port.S1)
             break
-
         except:
             ev_print("Something is wrong")
             ev_print("Disconnect/Reconnect motor")
@@ -125,9 +122,9 @@ def calibrate():
     while True:
         pressed = ev3.buttons.pressed()
         if Button.RIGHT in pressed:
-            motor.run_angle(300, 5)
+            motor.run_angle(100, 5)
         elif Button.LEFT in pressed:
-            motor.run_angle(300, -5)
+            motor.run_angle(100, -5)
         elif (Button.UP in pressed) or (touch.pressed()):
             motor.reset_angle(0)
             break
@@ -135,15 +132,15 @@ def calibrate():
     clock.set_time(HOURS[0][0], HOURS[0][1])
     ev_print("Calibration done")
     ev_print("Assuming it's %02d:%02d" % (HOURS[0][0] % 24, HOURS[0][1]))
-    pybricks.tools.wait(5000)
+    ev_print("Going live in 5 seconds!")
+    for i in range(5):
+        pybricks.tools.wait(1000)
+        ev_print("*" * i)
     ev3.screen.clear()
     ev_print("LIVE -- REAL TIME!")
 
 def check_pressed():
-    if (touch.pressed()) or (Button.DOWN in ev3.buttons.pressed()):
-        return True
-    else:
-        return False
+    return touch.pressed() or (Button.DOWN in ev3.buttons.pressed())
     
 def main():    
     ev3.light.on(Color.GREEN)
@@ -164,4 +161,3 @@ if __name__ == "__main__":
     while True:        
         calibrate()        
         main()    
-
