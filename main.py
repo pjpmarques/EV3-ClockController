@@ -5,6 +5,7 @@
 from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import Motor
 from pybricks.iodevices import AnalogSensor
+from pybricks.ev3devices import TouchSensor
 from pybricks.parameters import Port
 from pybricks.parameters import Button
 from pybricks.parameters import Color
@@ -59,7 +60,7 @@ class Clock:
                     done = True
                     break
                 
-            ev_print("*** 1 min")
+            ev_print("*** 1 min ***")
                 
             if not done:
                 self.motor.run_angle(Clock.MOTOR_SPEED, 1 * Clock.TIME_TURN)
@@ -79,12 +80,11 @@ class Clock:
 # Main section and global variables
 
 HOURS = [ (16, 15), (19, 0), (24 + 4, 0), (24 + 6, 30)]
-V_THRESHOLD = 2500
 
 ev3 = None
 motor = None
-esp32 = None
 clock = None
+touch = None
 
 ################################################################
 
@@ -92,7 +92,7 @@ def init_brick():
     # Initialize the EV3 Brick.
     global ev3
     global motor
-    global esp32
+    global touch
     global clock
     
     ev3 = EV3Brick()
@@ -101,17 +101,18 @@ def init_brick():
     
     while True:            
         try:
-            motor = Motor(Port.A)
-            esp32 = AnalogSensor(Port.S1)
+            motor = Motor(Port.D)
+            touch = TouchSensor(Port.S1)
             break
+
         except:
             ev_print("Something is wrong")
-            ev_print("Disconnect sensor/motor")
+            ev_print("Disconnect/Reconnect motor")
             pybricks.tools.wait(5000)
             ev3.screen.clear()
                 
     clock = Clock(motor, HOURS[0][0], HOURS[0][1])
-
+    
 
 def calibrate():
     ev3.light.on(Color.RED)
@@ -127,7 +128,7 @@ def calibrate():
             motor.run_angle(300, 5)
         elif Button.LEFT in pressed:
             motor.run_angle(300, -5)
-        elif (Button.UP in pressed) or (esp32.voltage() > V_THRESHOLD):
+        elif (Button.UP in pressed) or (touch.pressed()):
             motor.reset_angle(0)
             break
 
@@ -139,7 +140,7 @@ def calibrate():
     ev_print("LIVE -- REAL TIME!")
 
 def check_pressed():
-    if (esp32.voltage() > V_THRESHOLD) or (Button.DOWN in ev3.buttons.pressed()):
+    if (touch.pressed()) or (Button.DOWN in ev3.buttons.pressed()):
         return True
     else:
         return False
