@@ -5,7 +5,7 @@ This code runs on a LEGO EV3 Brick connected to a servo motor that advances a cl
 
 See it in action:
 
-![](https://github.com/pjpmarques/EV3-ClockController/raw/main/imgs/ClockVideo.mp4)
+https://github.com/pjpmarques/EV3-ClockController/raw/main/imgs/ClockVideo.mp4
 
 This code is used in conjunction with a [EV3 to ESP32/DMX bridge](https://github.com/pjpmarques/DMX512-EV3-Bridge) that I've also developed.
 
