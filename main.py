@@ -22,8 +22,8 @@ class Clock:
     """Allows to perform time calculations and control a physical clock connected to the RV3 brick."""
     
     # Constants
-    TIME_TURN = 8.2             # Number of degrees that the clock motor needs to advance to represent one minute in the physical clock
-    MOTOR_SPEED = 300           # Target motor speed
+    TIME_TURN = 8.02              # Number of degrees that the clock motor needs to advance to represent one minute in the physical clock
+    MOTOR_SPEED = 300             # Target motor speed
     
     def __init__(self, motor, hour, min):
         """Create a new instance of our clock
@@ -33,9 +33,11 @@ class Clock:
             hour (int): start hour
             min (int): start minute
         """
+        
         self.current_hour = hour
         self.current_min  = min
         self.motor = motor
+
 
     def go_to_time(self, hour, min):
         """Advance the clock to a certain time, actually actuating the motor.
@@ -47,15 +49,16 @@ class Clock:
         
         delta_hours = hour - self.current_hour
         delta_mins = min - self.current_min
-        if (delta_mins < 0):
-            delta_hours-= 1
-            delta_mins+= 60
+        if (delta_mins < 0.0):
+            delta_hours-= 1.0
+            delta_mins+= 60.0
                 
-        angle = delta_hours*60*Clock.TIME_TURN + delta_mins*Clock.TIME_TURN
+        angle = delta_hours*60.0*Clock.TIME_TURN + delta_mins*Clock.TIME_TURN
         self.motor.run_angle(Clock.MOTOR_SPEED, angle)
             
         self.current_hour = hour
         self.current_min = min
+        
         
     def set_time(self, hour, min):
         """Set the clock to a certain time without actuating the motor.
@@ -68,9 +71,11 @@ class Clock:
         self.current_hour = hour
         self.current_min = min
         
+        
     def normalize_time(self):
         """Normalize the internal clock into hours that range [0, 24["""
         self.current_hour = self.current_hour % 24
+                
                 
     def run_until_pressed(self, should_stop):
         """Advance the clock in real-time by actuating the motor until a button is pressed.
@@ -112,7 +117,7 @@ HOURS = [ (16, 15), (19, 0), (24 + 4, 0), (24 + 6, 30)]                     # Th
 ev3 = None
 motor = None
 clock = None
-touch = None
+touch = []
 
 ################################################################
 
@@ -130,24 +135,29 @@ def init_brick():
     # Make sure that the sensors and motors are connected
     while True:            
         try:
-            motor = Motor(Port.D)
-            touch = TouchSensor(Port.S1)
+            motor = Motor(Port.D)            
+            for port in (Port.S1, Port.S2, Port.S3, Port.S4):
+                try:
+                    touch.append(TouchSensor(port))
+                except:
+                    pass                        
             break
         except:
+            motor = None
+            touch = []            
             ev_print("Something is wrong")
             ev_print("Disconnect/Reconnect motor")
             pybricks.tools.wait(5000)
             ev3.screen.clear()
                 
     # Initialize the clock
-    clock = Clock(motor, HOURS[0][0], HOURS[0][1])
-    
+    clock = Clock(motor, HOURS[0][0], HOURS[0][1])    
 
 def calibrate():
     """Ask the user to calibrate the clock to the starting hour"""
     ev3.light.on(Color.RED)
     ev3.screen.clear()
-    ev_print("Ready to calibrate")    
+    ev_print("READY TO CALIBRATE")    
     ev_print("LEFT / RIGHT Buttons to adjust")
     ev_print("Set clock to %02d:%2d" % (HOURS[0][0] % 24, HOURS[0][1]))
     ev_print("Press UP when done")
@@ -158,17 +168,17 @@ def calibrate():
             motor.run_angle(100, 5)
         elif Button.LEFT in pressed:
             motor.run_angle(100, -5)
-        elif (Button.UP in pressed) or (touch.pressed()):
+        elif (Button.UP in pressed) or any(sensor.pressed() for sensor in touch):
             motor.reset_angle(0)
             break
 
     clock.set_time(HOURS[0][0], HOURS[0][1])
     ev_print("Calibration done")
     ev_print("Assuming it's %02d:%02d" % (HOURS[0][0] % 24, HOURS[0][1]))
-    ev_print("Going live in 5 seconds!")
-    for i in range(5):
+    ev_print("Going live in 5 seconds...")
+    for i in range(5, 0, -1):
         pybricks.tools.wait(1000)
-        ev_print("*" * i)
+        ev_print("   %d" % i)
     ev3.screen.clear()
     ev_print("LIVE -- REAL TIME!")
 
@@ -178,7 +188,7 @@ def check_pressed():
     Returns:
         boolean: If a button is pressed.
     """
-    return touch.pressed() or (Button.DOWN in ev3.buttons.pressed())
+    return any(sensor.pressed() for sensor in touch) or (Button.DOWN in ev3.buttons.pressed())
     
 def main():    
     """Main loop -- run the clock through all the hours"""
@@ -198,7 +208,8 @@ def main():
 
 # Main routine for the script
 if __name__ == "__main__":    
-    init_brick()    
+    init_brick() 
+    
     while True:        
         calibrate()        
         main()    
