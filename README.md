@@ -11,7 +11,7 @@ This code is used in conjunction with a [EV3 to ESP32/DMX bridge](https://github
 
 You can see it running here:
 
-http://eden.dei.uc.pt/~pmarques/ClockVideo.mp4
+![](http://eden.dei.uc.pt/~pmarques/ClockVideo.mp4)
 
 
 License
