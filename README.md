@@ -11,10 +11,7 @@ This code is used in conjunction with a [EV3 to ESP32/DMX bridge](https://github
 
 You can see it in action here:
 
-
-https://github.com/pjpmarques/EV3-ClockController/assets/782106/95eae904-61f0-49eb-8bf5-6afc3f65ed86
-
-
+https://github.com/pjpmarques/EV3-ClockController/assets/782106/8a504687-f5b2-4b46-82bb-65de99f55812
 
 License
 ===
