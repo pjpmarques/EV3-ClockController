@@ -188,7 +188,7 @@ def check_pressed():
     Returns:
         boolean: If a button is pressed.
     """
-    return any(sensor.pressed() for sensor in touch) or (Button.DOWN in ev3.buttons.pressed())
+    return any(sensor.pressed() for sensor in touch) or (Button.UP in ev3.buttons.pressed())
     
 def main():    
     """Main loop -- run the clock through all the hours"""
